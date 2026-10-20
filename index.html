@@ -1160,8 +1160,8 @@ function buildGapFill() {
   const bank = document.getElementById('wordBank');
   const container = document.getElementById('gfSentences');
 
-  // Build word bank
-  gfWords.forEach(w => {
+  // Build word bank (shuffled so the words are not in sentence order)
+  shuffleWords(gfWords).forEach(w => {
     wordUsedCount[w] = 0;
     const el = document.createElement('span');
     el.className = 'drag-word';
@@ -1190,6 +1190,27 @@ function buildGapFill() {
     div.querySelectorAll('.drop-zone').forEach(z => z.addEventListener('pointerdown', startPointer));
     container.appendChild(div);
   });
+}
+
+// Fisher–Yates shuffle; reshuffles if the result still starts in answer order
+function shuffleWords(list) {
+  const answerOrder = gfSentencesData.flatMap(s => s.answers);
+  let a;
+  do {
+    a = [...list];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+  } while (a.slice(0, 3).join() === answerOrder.slice(0, 3).join());
+  return a;
+}
+
+function reshuffleBank() {
+  const bank = document.getElementById('wordBank');
+  const words = [...bank.querySelectorAll('.drag-word')];
+  const byWord = Object.fromEntries(words.map(el => [el.dataset.word, el]));
+  shuffleWords(words.map(el => el.dataset.word)).forEach(w => bank.appendChild(byWord[w]));
 }
 
 function selectWord(word, el) {
@@ -1355,6 +1376,7 @@ function resetDragFill() {
   });
   selectedWord = null;
   gfCorrect = 0;
+  reshuffleBank();
   updateProgress();
 }
 
